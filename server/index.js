@@ -4,10 +4,10 @@ import cookieParser from "cookie-parser";
 import connectDB from "./config/db.js";
 import passport from "passport";
 import session from "express-session";
-import authRoutes from "./routes/authRoutes.js";
-import userRoutes from "./routes/userRoutes.js";
-import CustomError from "./utils/customError.js";
+import authRoutes from "./routes/auth.routes.js";
+import userRoutes from "./routes/user.routes.js";
 import "./config/passport.js";
+import { errorHandler } from "./utils/customError.js";
 
 dotenv.config();
 
@@ -21,6 +21,11 @@ app.use(
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    },
   })
 );
 app.use(passport.initialize());
@@ -32,7 +37,9 @@ app.use("/api/users", userRoutes);
 
 // Handle undefined routes
 app.all("*", (req, res, next) => {
-  next(new CustomError(`Can't find ${req.originalUrl} on this server!`, 404));
+  return next(
+    errorHandler(404, `Can't find ${req.originalUrl} on this server!`)
+  );
 });
 
 // Global error handler
